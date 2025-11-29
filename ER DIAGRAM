@@ -1,1 +1,243 @@
+import requests
+import schedule # Otomasyon için gerekli kütüphane
+import time
+from datetime import date
+from typing import Optional, List
+from playwright.sync_api import sync_playwright 
+from bs4 import BeautifulSoup
+from sqlalchemy import create_engine, Column, Integer, String, Date, DECIMAL, ForeignKey, Text
+from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.ext.declarative import declarative_base
 
+# ==============================================================================
+## BÖLÜM I: YAPILANDIRMA VE VERİTABANI BAĞLANTISI
+# ==============================================================================
+
+# **VERİTABANI YAPILANDIRMASI (P3 Bonus Puanı için PostgreSQL önerilir)**
+# NOT: Bu URL'yi kendi PostgreSQL/MySQL/SQLite bağlantı bilginizle değiştirin.
+DATABASE_URL = "https://www.imdb.com/list/ls004610270/" 
+# SQLite kullanmak için: DATABASE_URL = "sqlite:///movie_archive.db"
+
+Engine = create_engine(DATABASE_URL)
+Base = declarative_base()
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=Engine)
+def create_tables():
+    """Veritabanında tabloları oluşturur."""
+    Base.metadata.create_all(bind=Engine)
+
+
+# ==============================================================================
+## BÖLÜM II: OOP VE ORM MODELLERİ (BONUS PUAN HEDEFLENİR: +15 ORM/Data Classes)
+# ==============================================================================
+
+# ORM Sınıf Tanımları (SQLAlchemy ORM + Data Class mantığı)
+# Not: __init__ metodu yerine ORM'in mekanizması kullanılır.
+
+class User(Base):
+    """Kullanıcı Bilgileri"""
+    __tablename__ = 'Users'
+    user_id = Column(Integer, primary_key=True)
+    user_name = Column(String(50), nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    join_date = Column(Date, default=date.today)
+    
+    # İlişkiler
+    archives = relationship("Archive", back_populates="user")
+    ratings = relationship("Rating", back_populates="user")
+
+class Movie(Base):
+    """Film Bilgileri (API entegrasyonu alanlarını içerir)"""
+    __tablename__ = 'Movies'
+    movie_id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    director = Column(String(100))
+    release_year = Column(Integer)
+    
+    # **P2 Entegrasyon Alanları (SQL Modifikasyonundan geldi)**
+    tmdb_id = Column(Integer, unique=True) # API kimliği
+    external_rating = Column(DECIMAL(3, 1)) # API'dan çekilen puan
+    last_updated = Column(Date) # Otomasyon kontrolü için
+
+    # İlişkiler
+    archives = relationship("Archive", back_populates="movie")
+    ratings = relationship("Rating", back_populates="movie")
+
+class Archive(Base):
+    """Kullanıcının İzleme Listesi Durumu (watching_status alanını içerir)"""
+    __tablename__ = 'Archive'
+    archive_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('Users.user_id'))
+    movie_id = Column(Integer, ForeignKey('Movies.movie_id'))
+    date_added = Column(Date, default=date.today)
+    watching_status = Column(String(50)) # Örn: 'not started', 'watching', 'finished'
+
+    # İlişki tanımları
+    user = relationship("User", back_populates="archives")
+    movie = relationship("Movie", back_populates="archives")
+
+class Rating(Base):
+    """Kullanıcı Puanlamaları ve Yorumları"""
+    __tablename__ = 'Ratings'
+    rating_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('Users.user_id'))
+    movie_id = Column(Integer, ForeignKey('Movies.movie_id'))
+    score = Column(Integer) # 1-10 arası
+    comment = Column(Text)
+
+    # İlişki tanımları
+    user = relationship("User", back_populates="ratings")
+    movie = relationship("Movie", back_populates="ratings")
+
+
+# Veritabanında tabloları oluşturur (İlk çalıştırmada gereklidir)
+def create_tables():
+    Base.metadata.create_all(bind=Engine)
+
+
+# ==============================================================================
+## BÖLÜM III: P2 WEB ENTEGRASYONU VE OTOMASYON MANTIĞI
+# ==============================================================================
+
+class APIManager:
+    """Harici API'larla etkileşimi yönetir (P2 Temel Gereksinim)"""
+    
+    # Gerçek uygulamada TMDB API anahtarınızı buraya koymalısınız
+    TMDB_API_KEY = "DEMO_KEY" 
+    BASE_URL = "https://www.themoviedb.org/"
+
+    def search_movie_details(self, title: str) -> Optional[dict]:
+        """Film adına göre arama yapar ve gerekli verileri çeker."""
+        
+        # requests kütüphanesi ile API çağrısı
+        endpoint = f"{self.BASE_URL}/search/movie"
+        params = {"api_key": self.TMDB_API_KEY, "query": title}
+        
+        try:
+            response = requests.get(endpoint, params=params, timeout=5)
+            response.raise_for_status() # Hata kontrolü
+            
+            data = response.json()
+            if data.get('results'):
+                first_result = data['results'][0]
+                # API'dan çekilen verileri sözlük (dict) formatında döndürür
+                return {
+                    "tmdb_id": first_result['id'],
+                    "external_rating": round(first_result.get('vote_average', 0.0), 1),
+                    "director": "API'dan Director çekimi ekstra çağrı gerektirir", # Basitlik için
+                    "description": first_result.get('overview'),
+                    "release_year": int(first_result.get('release_date', '0000')[:4])
+                }
+            return None
+        except requests.exceptions.RequestException as e:
+            print(f"API hatası: {e}")
+            return None
+
+class MovieService:
+    """CRUD ve İş Mantığı Servisi (P3 CRUD)"""
+
+    def get_db(self):
+        """Veritabanı oturumunu döndürür (ORM kullanımı)"""
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    def add_movie_by_title(self, db, title: str):
+        """Yeni bir film eklerken API'dan otomatik veri çeker (P2/P3 C)"""
+        api_manager = APIManager()
+        details = api_manager.search_movie_details(title)
+
+        if details and not db.query(Movie).filter(Movie.tmdb_id == details['tmdb_id']).first():
+            # Yeni Movie nesnesi oluşturulur
+            new_movie = Movie(
+                name=title,
+                release_year=details['release_year'],
+                tmdb_id=details['tmdb_id'],
+                external_rating=details['external_rating'],
+                last_updated=date.today()
+            )
+            db.add(new_movie)
+            db.commit()
+            db.refresh(new_movie)
+            return new_movie
+        return None
+
+def automatic_rating_update():
+    """
+    OTOMASYON GÖREVİ: Veritabanındaki filmlerin harici puanlarını otomatik günceller.
+    (P2 Otomasyon Gereksinimi)
+    """
+    print(f"\n[{date.today()}] >>> Otomatik puan güncelleme görevi BAŞLADI...")
+    db = SessionLocal()
+    api_manager = APIManager()
+
+    try:
+        # Puanı 30 günden eski olan filmleri çek (ÖRNEK KONTROL)
+        # ORM kullanılarak sorgulama yapılır
+        thirty_days_ago = date.today().replace(day=1) # Basit bir tarih kontrolü
+        
+        movies_to_update = db.query(Movie).filter(
+            Movie.last_updated < thirty_days_ago,
+            Movie.tmdb_id.isnot(None) # API ID'si olan filmler
+        ).limit(10).all() # Her seferinde sadece 10 film güncellensin (API limitlerini aşmamak için)
+        
+        print(f"   - Güncellenecek {len(movies_to_update)} film bulundu.")
+
+        for movie in movies_to_update:
+            # API'dan detayları tekrar çek (basitlik için sadece isme göre arama)
+            new_data = api_manager.search_movie_details(movie.name) 
+            
+            if new_data and new_data.get('external_rating') != movie.external_rating:
+                # Güncelleme (P3 CRUD U - Update)
+                movie.external_rating = new_data.get('external_rating')
+                movie.last_updated = date.today()
+                print(f"   - Güncellendi: {movie.name} -> Yeni Puan: {movie.external_rating}")
+
+        db.commit()
+        print(">>> Otomatik puan güncelleme TAMAMLANDI.")
+
+    except Exception as e:
+        print(f"Hata oluştu: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+# ==============================================================================
+## BÖLÜM IV: ANA ÇALIŞMA VE OTOMASYON BAŞLANGICI
+# ==============================================================================
+
+if __name__ == "__main__":
+    # Tabloları oluştur (Uygulamayı ilk başlattığınızda çalıştırın)
+    # create_tables() 
+
+    print("--- Movie Rating and Archiving System ---")
+
+    # API ve CRUD Örneği: Yeni film ekleme
+    movie_service = MovieService()
+    db = SessionLocal()
+    
+    # Film ekleme (API'dan veri çekimini tetikler)
+    new_movie = movie_service.add_movie_by_title(db, "Dune")
+    if new_movie:
+        print(f"Eklendi: {new_movie.name} (API ID: {new_movie.tmdb_id}, Puan: {new_movie.external_rating})")
+    else:
+        print("Film zaten mevcut veya API hatası var.")
+
+    db.close()
+    
+    # ----------------------------------------------------
+    # OTOMASYON BAŞLATMA (P2 Gereksinimi)
+    # ----------------------------------------------------
+    
+    # Her 24 saatte bir puan güncelleme görevini zamanla
+    schedule.every(24).hours.do(automatic_rating_update)
+    print("\n[OTOMASYON AKTİF] Harici puan güncelleme görevi 24 saatte bir çalışacak.")
+    
+    # Uygulama arka plan döngüsü (gerçek bir sunucuda bu döngü sürekli çalışır)
+    # Bu kısmı, uygulamayı test etmek için açabilirsiniz:
+    
+    # while True:
+    #     schedule.run_pending()
+    #     time.sleep(1)
