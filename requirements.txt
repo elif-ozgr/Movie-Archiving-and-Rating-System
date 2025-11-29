@@ -1,1 +1,6 @@
+requests
+SQLAlchemy
+schedule
+beautifulsoup4
+playwright
 
