@@ -1,8 +1,8 @@
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Date, DECIMAL, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from datetime import date
-from database import Base
-
+Base = declarative_base()
 class User(Base):
     __tablename__ = 'Users'
     user_id = Column(Integer, primary_key=True)

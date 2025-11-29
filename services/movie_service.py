@@ -4,7 +4,10 @@ from models.models import Movie
 from datetime import date
 
 class MovieService:
-    """CRUD ve İş Mantığı Servisi"""
+    """CRUD ve iş mantığı servisi."""
+
+    def __init__(self):
+        self.api_manager = APIManager()  # APIManager sınıfını başlat
 
     def get_db(self):
         db = SessionLocal()
@@ -14,8 +17,7 @@ class MovieService:
             db.close()
 
     def add_movie_by_title(self, db, title: str):
-        api_manager = APIManager()
-        details = api_manager.search_movie_details(title)
+        details = self.api_manager.search_movie_details(title)
 
         if details and not db.query(Movie).filter(Movie.tmdb_id == details['tmdb_id']).first():
             new_movie = Movie(
@@ -30,4 +32,5 @@ class MovieService:
             db.refresh(new_movie)
             return new_movie
         return None
+
 

@@ -2,14 +2,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models.models import Base
 
-# PostgreSQL Bonus +10
-# Örnek bağlantı
-DATABASE_URL = "postgresql://postgres:1234@localhost:5432/movies"
+# MySQL bağlantısı (PyMySQL kullanılıyor)
+DATABASE_URL = "mysql+pymysql://mdb:Md123456@localhost:3306/Movie_Rating_Archiving_System"
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-DATABASE_URL = "sqlite:///movie_archive.db"
+
 

@@ -1,28 +1,31 @@
 import requests
 
 class APIManager:
-    TMDB_API_KEY = "DEMO_KEY"  
-    BASE_URL = "https://api.themoviedb.org/3"
+    """TMDB API ile iletişim kurar."""
+
+    def __init__(self, api_key: str = "6523d141f924d3a8ad4726be5021b873"):
+        self.api_key = api_key
+        self.base_url = "https://api.themoviedb.org/3"
 
     def search_movie_details(self, title: str):
-        endpoint = f"{self.BASE_URL}/search/movie"
-        params = {"api_key": self.TMDB_API_KEY, "query": title}
-
+        url = f"{self.base_url}/search/movie?api_key={self.api_key}&query={title}"
         try:
-            resp = requests.get(endpoint, params=params, timeout=5)
-            resp.raise_for_status()
-            data = resp.json()
-
-            if data.get("results"):
-                movie = data["results"][0]
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            if data['results']:
+                movie = data['results'][0]
                 return {
                     "tmdb_id": movie["id"],
-                    "external_rating": round(movie.get("vote_average", 0.0), 1),
-                    "release_year": int(movie.get("release_date", "0000")[:4])
+                    "release_year": movie.get("release_date", "")[:4],
+                    "external_rating": movie.get("vote_average", 0)
                 }
+            return None  # try bloğu içinde
+        except requests.HTTPError as e:
+            print(f"API hatası: {e}")
+            return None  # except bloğu içinde
 
-            return None
 
-        except Exception as e:
-            print("API hatası:", e)
-            return None
+
+
+
