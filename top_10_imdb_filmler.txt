@@ -1,0 +1,13 @@
+--- IMDb Top 10 Film Listesi ---
+Çekilme Zamanı: Mon Dec  1 20:05:14 2025
+
+1. Esaretin Bedeli
+2. Baba
+3. Kara Şövalye
+4. Baba 2
+5. 12 Öfkeli Adam
+6. Yüzüklerin Efendisi: Kralın Dönüşü
+7. Schindler'in Listesi
+8. Yüzüklerin Efendisi: Yüzük Kardeşliği
+9. Ucuz Roman
+10. İyi, Kötü ve Çirkin
