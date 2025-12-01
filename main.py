@@ -41,5 +41,6 @@ def main():
     # 5. Oturumu kapat
     db.close()
 
+# Python'da ana fonksiyonu çalıştırma standardı düzeltildi
 if __name__ == "__main__":
     main()
