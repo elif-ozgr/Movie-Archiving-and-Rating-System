@@ -6,11 +6,16 @@ import webbrowser
 def main():
     print("--- Movie Rating & Archiving System ---")
 
+    # 1. Veritabanını başlat ve oturum aç
     init_db()
     db = SessionLocal()
+    
+    # 2. Servis ve API yöneticilerini oluştur
     movie_service = MovieService()
-    api_manager = APIManager(api_key="6523d141f924d3a8ad4726be5021b873")
+    # API key'i kontrol edin ve güncel tutun
+    api_manager = APIManager(api_key="6523d141f924d3a8ad4726be5021b873") 
 
+    # 3. Film arama ve işleme
     title = "Dune"
     details = api_manager.search_movie_details(title)
 
@@ -28,17 +33,13 @@ def main():
     else:
         print("Film bulunamadı veya API hatası.")
 
-    # IMDb Top 250 sayfasını aç
+    # 4. IMDb Top 250 sayfasını aç
     imdb_url = "https://www.imdb.com/chart/top/"
     print(f"IMDb sayfası açılıyor: {imdb_url}")
     webbrowser.open(imdb_url)
 
+    # 5. Oturumu kapat
     db.close()
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
