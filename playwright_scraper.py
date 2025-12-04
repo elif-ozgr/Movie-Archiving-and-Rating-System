@@ -46,7 +46,7 @@ class IMDBScraper:
             return []
 
         # Kaydet
-        file_name = "top_10_imdb_filmler.txt"
+        file_name = "top_10_imdb_movies.txt"
         with open(file_name, "w", encoding="utf-8") as f:
             f.write("--- IMDb Top 10 Film Listesi ---\n")
             f.write(f"Çekilme Zamanı: {time.ctime()}\n\n")
