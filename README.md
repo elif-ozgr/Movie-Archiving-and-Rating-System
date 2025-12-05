@@ -82,7 +82,7 @@ or
 python -m pip install -r requirements.txt
 
 Environment Variables (.env file in project root):
-DATABASE_URL=mysql+pymysql://root:yourpassword@localhost:3306/Movie_Rating_and_Archiving_System
+DATABASE_URL = "mysql+pymysql://mdb:Md123456@localhost:3306/Movie_Rating_Archiving_System"
 TMDB_API_KEY=6523d141f924d3a8ad4726be5021b873
 TMDB_BASE_URL=https://api.themoviedb.org/3
 
@@ -273,3 +273,6 @@ Credits / Acknowledgements:
 -IMDb (https://www.imdb.com/)
 
 -Python, SQLAlchemy
+
+https://vimeo.com/1143569316?share=copy&fl=sv&fe=ci
+
