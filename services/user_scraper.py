@@ -13,7 +13,7 @@ class SeleniumScraper:
         chrome_options = Options()
         self.headless = headless
         
-        # Bot algılamayı önleme ve ayarlar
+        # Anti-bot and performance settings
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--window-size=1920,1080")
@@ -29,7 +29,7 @@ class SeleniumScraper:
             chrome_options.add_argument("--disable-gpu")
 
         try:
-            # 🔹 ChromeDriver yolunu buraya yaz (senin indirdiğin chromedriver.exe)
+            # 🔹 Path to your installed chromedriver.exe
             chrome_driver_path = r"C:\tools\chromedriver.exe"
             service = Service(executable_path=chrome_driver_path)
 
@@ -37,16 +37,16 @@ class SeleniumScraper:
             self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             
         except WebDriverException as e:
-            print(f"HATA: ChromeDriver başlatılamadı. Hata: {e}")
+            print(f"ERROR: ChromeDriver could not be started. Details: {e}")
             raise
 
     def open_list_page(self):
         url = "https://letterboxd.com/visdave3/list/official-top-250-narrative-feature-films/"
         try:
             self.driver.get(url)
-            print(f"Sayfa açıldı: {self.driver.title}")
+            print(f"Page opened: {self.driver.title}")
         except WebDriverException as e:
-            print(f"HATA: Letterboxd sayfası açılamadı: {e}")
+            print(f"ERROR: Letterboxd page could not be opened: {e}")
             raise
 
     def scrape_top_10(self):
@@ -62,24 +62,24 @@ class SeleniumScraper:
             top_movies = [movie.text.strip() for movie in movies[:10]]
             
             if top_movies:
-                file_name = "top_10_filmler.txt"
+                file_name = "top_10_movies.txt"
                 with open(file_name, "w", encoding="utf-8") as f:
-                    f.write("--- Letterboxd Top 10 Film Listesi ---\n")
-                    f.write(f"Çekilme Zamanı: {time.ctime()}\n\n")
+                    f.write("--- Letterboxd Top 10 Movie List ---\n")
+                    f.write(f"Scraped At: {time.ctime()}\n\n")
                     for i, title in enumerate(top_movies, 1):
                         f.write(f"{i}. {title}\n")
-                print(f"[DOSYA] BAŞARILI: İlk 10 film '{file_name}' dosyasına kaydedildi.")
+                print(f"[FILE] SUCCESS: Top 10 movies saved to '{file_name}'.")
             
             if not top_movies:
-                print("UYARI: Film çekilemedi.")
+                print("WARNING: No movies could be scraped.")
                 
             return top_movies
             
         except TimeoutException:
-            print("HATA: 30 saniye içinde film başlıkları bulunamadı.")
+            print("ERROR: Movie titles could not be found within 30 seconds.")
             return []
         except Exception as e:
-            print(f"Genel Hata: {e}")
+            print(f"General Error: {e}")
             return []
 
     def close(self):
@@ -87,23 +87,23 @@ class SeleniumScraper:
             self.driver.quit()
 
 
-# --- TEST ETMEK İÇİN ---
+# --- FOR TESTING ---
 if __name__ == "__main__":
     try:
-        print("Scraper test ediliyor. Chrome tarayıcısı açılacak...")
+        print("Testing scraper. Chrome browser will open...")
         scraper = SeleniumScraper(headless=False)
         results = scraper.scrape_top_10()
         
-        print("\n--- TEST SONUCU ---")
+        print("\n--- TEST RESULT ---")
         if results:
-            print("BAŞARILI! Çekilen İlk 10 Film Terminalde Görülüyor.")
+            print("SUCCESS! Top 10 scraped movies are shown below:")
             for i, movie in enumerate(results, 1):
                 print(f"{i}. {movie}")
         else:
-            print("HATA: Film listesi boş döndü.")
+            print("ERROR: Movie list is empty.")
             
     except Exception as e:
-        print(f"\nTEST BAŞARISIZ! Genel Hata: {e}")
+        print(f"\nTEST FAILED! General Error: {e}")
     finally:
         if 'scraper' in locals() and scraper.driver:
             scraper.close()

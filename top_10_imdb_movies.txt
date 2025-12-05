@@ -1,13 +1,13 @@
---- IMDb Top 10 Film Listesi ---
-Çekilme Zamanı: Fri Dec  5 09:09:29 2025
+--- IMDb Top 10 Movie List ---
+Scrape Time: Fri Dec  5 09:41:59 2025
 
-1. Esaretin Bedeli
-2. Baba
-3. Kara Şövalye
-4. Baba 2
-5. 12 Öfkeli Adam
-6. Yüzüklerin Efendisi: Kralın Dönüşü
-7. Schindler'in Listesi
-8. Yüzüklerin Efendisi: Yüzük Kardeşliği
-9. Ucuz Roman
-10. İyi, Kötü ve Çirkin
+1. The Shawshank Redemption
+2. The Godfather
+3. The Dark Knight
+4. The Godfather Part II
+5. 12 Angry Men
+6. The Lord of the Rings: The Return of the King
+7. Schindler's List
+8. The Lord of the Rings: The Fellowship of the Ring
+9. Pulp Fiction
+10. The Good, the Bad and the Ugly

@@ -6,16 +6,16 @@ import webbrowser
 def main():
     print("--- Movie Rating & Archiving System ---")
 
-    # 1. Veritabanını başlat ve oturum aç
+    # 1. Initialize database and open session
     init_db()
     db = SessionLocal()
     
-    # 2. Servis ve API yöneticilerini oluştur
+    # 2. Create service and API manager
     movie_service = MovieService()
-    # API key'i kontrol edin ve güncel tutun
+    # Make sure API key is correct and up-to-date
     api_manager = APIManager(api_key="6523d141f924d3a8ad4726be5021b873") 
 
-    # 3. Film arama ve işleme
+    # 3. Search and process movie
     title = "Dune"
     details = api_manager.search_movie_details(title)
 
@@ -23,24 +23,24 @@ def main():
     existing_movie = db.query(Movie).filter_by(tmdb_id=details['tmdb_id']).first() if details else None
 
     if existing_movie:
-        print(f"Film zaten mevcut: {existing_movie.name}")
+        print(f"Movie already exists: {existing_movie.name}")
     elif details:
         new_movie = movie_service.add_movie_by_title(db, title)
         if new_movie:
-            print(f"Eklendi: {new_movie.name} (API puanı: {new_movie.external_rating})")
+            print(f"Added: {new_movie.name} (API rating: {new_movie.external_rating})")
         else:
-            print("Film eklenemedi veya API hatası.")
+            print("Movie could not be added or API error.")
     else:
-        print("Film bulunamadı veya API hatası.")
+        print("Movie not found or API error.")
 
-    # 4. IMDb Top 250 sayfasını aç
+    # 4. Open IMDb Top 250 page
     imdb_url = "https://www.imdb.com/chart/top/"
-    print(f"IMDb sayfası açılıyor: {imdb_url}")
+    print(f"Opening IMDb page: {imdb_url}")
     webbrowser.open(imdb_url)
 
-    # 5. Oturumu kapat
+    # 5. Close session
     db.close()
 
-# Python'da ana fonksiyonu çalıştırma standardı düzeltildi
+# Standard Python entry point
 if __name__ == "__main__":
     main()

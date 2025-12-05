@@ -14,46 +14,45 @@ class IMDBScraper:
         self.page = context.new_page()
 
     def open_list_page(self):
-        # IMDb resmi Top 250 listesi
+        # Official IMDb Top 250 list
         url = "https://www.imdb.com/chart/top/"
         self.page.goto(url, wait_until="domcontentloaded")
 
     def scrape_top_10(self):
         self.open_list_page()
 
-        # IMDb 2024–2025 yeni layout stable selector
+        # IMDb 2024–2025 new layout stable selector
         SELECTOR = 'li.ipc-metadata-list-summary-item h3.ipc-title__text'
 
         try:
             self.page.wait_for_selector(SELECTOR, timeout=15000)
         except:
-            print("❌ IMDb listesi yüklenemedi. Selector değişmiş olabilir.")
+            print("❌ IMDb list could not be loaded. Selector might have changed.")
             return []
 
         elements = self.page.query_selector_all(SELECTOR)
 
-        # Format: "1. The Shawshank Redemption" → Sadece film ismini almak için bölüyoruz
+        # Format: "1. The Shawshank Redemption" → split to get only movie name
         movies = []
         for el in elements[:10]:
             text = el.inner_text().strip()
-            # "1. The Shawshank Redemption" → sadece film adı
             parts = text.split(". ", 1)
             movie_name = parts[1] if len(parts) > 1 else text
             movies.append(movie_name)
 
         if not movies:
-            print("❌ Film listesi boş döndü.")
+            print("❌ Movie list returned empty.")
             return []
 
-        # Kaydet
+        # Save to file
         file_name = "top_10_imdb_movies.txt"
         with open(file_name, "w", encoding="utf-8") as f:
-            f.write("--- IMDb Top 10 Film Listesi ---\n")
-            f.write(f"Çekilme Zamanı: {time.ctime()}\n\n")
+            f.write("--- IMDb Top 10 Movie List ---\n")
+            f.write(f"Scrape Time: {time.ctime()}\n\n")
             for i, title in enumerate(movies, 1):
                 f.write(f"{i}. {title}\n")
 
-        print(f"✅ İlk 10 IMDb filmi başarıyla çekildi ve '{file_name}' dosyasına kaydedildi.")
+        print(f"✅ Top 10 IMDb movies successfully scraped and saved to '{file_name}'.")
         return movies
 
     def close(self):
@@ -68,8 +67,8 @@ if __name__ == "__main__":
     scraper.close()
 
     if results:
-        print("\n--- ÇEKİLEN IMDb FİLMLERİ ---")
+        print("\n--- SCRAPED IMDb MOVIES ---")
         for i, movie in enumerate(results, 1):
             print(f"{i}. {movie}")
     else:
-        print("❌ Film listesi boş döndü.")
+        print("❌ Movie list returned empty.")

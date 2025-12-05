@@ -3,21 +3,21 @@ from typing import Optional, Dict, Any
 
 
 class APIManager:
-    """TMDB API ile iletişim kurar."""
+    """Communicates with the TMDB API."""
 
-    # Senin TMDB API KEY'in (hard-coded versiyon)
+    # Your TMDB API KEY (hard-coded version)
     TMDB_API_KEY = "6523d141f924d3a8ad4726be5021b873"
     BASE_URL = "https://api.themoviedb.org/3"
 
     def __init__(self, api_key: Optional[str] = None):
         """
-        İstenirse dışarıdan API key alınır.
-        Alınmazsa class içindeki default key kullanılır.
+        Optionally receives an external API key.
+        If none is provided, the default class API key is used.
         """
         self.api_key = api_key or self.TMDB_API_KEY
 
     def search_movie_details(self, title: str) -> Optional[Dict[str, Any]]:
-        """Verilen film adıyla TMDB'den detayları çeker."""
+        """Fetches movie details from TMDB using the given title."""
         endpoint = f"{self.BASE_URL}/search/movie"
         params = {"api_key": self.api_key, "query": title}
 
@@ -41,7 +41,7 @@ class APIManager:
             )
             external_rating = float(movie.get("vote_average", 0))
 
-            # ➕ Daha kapsamlı bilgiler için ekstra API isteği
+            # ➕ Additional API request for more detailed information
             genres = []
             if tmdb_id:
                 details_url = f"{self.BASE_URL}/movie/{tmdb_id}"
@@ -49,10 +49,10 @@ class APIManager:
                 det_resp.raise_for_status()
                 det_data = det_resp.json()
 
-                # Daha detaylı overview
+                # More detailed overview
                 overview = det_data.get("overview", overview)
 
-                # Türler
+                # Extract genres
                 genres = [g["name"] for g in det_data.get("genres", [])]
 
             return {

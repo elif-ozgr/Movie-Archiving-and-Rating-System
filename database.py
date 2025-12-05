@@ -3,26 +3,26 @@ from sqlalchemy.orm import sessionmaker
 from models.models import Base
 from sqlalchemy.exc import OperationalError
 
-# MySQL bağlantısı (PyMySQL kullanılıyor)
+# MySQL connection (using PyMySQL)
 DATABASE_URL = "mysql+pymysql://mdb:Md123456@localhost:3306/Movie_Rating_Archiving_System"
 
-# Önce MySQL'e bağlanıp veritabanını kontrol/oluştur
+# First, connect to MySQL and check/create the database
 engine_temp = create_engine("mysql+pymysql://mdb:Md123456@localhost:3306/")
 with engine_temp.connect() as conn:
     try:
-        # SQLAlchemy 2.x için text() kullanıyoruz
+        # Using text() for SQLAlchemy 2.x
         conn.execute(text("CREATE DATABASE IF NOT EXISTS Movie_Rating_Archiving_System"))
     except OperationalError as e:
-        print("Veritabanı oluşturulamadı:", e)
+        print("Database could not be created:", e)
 
-# Asıl engine
+# Main engine
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
-    """Tüm tabloları oluşturur. Zaten varsa hata vermez."""
+    """Creates all tables. Will not raise an error if they already exist."""
     try:
         Base.metadata.create_all(bind=engine)
-        print("Tüm tablolar başarılı şekilde oluşturuldu veya zaten mevcut.")
+        print("All tables successfully created or already exist.")
     except Exception as e:
-        print("Tablolar oluşturulamadı:", e)
+        print("Tables could not be created:", e)
